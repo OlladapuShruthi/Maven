@@ -1,0 +1,208 @@
+# Docker Compose Configuration for Task Management Application
+# This file demonstrates all key Docker Compose concepts
+
+version: '3.8'
+
+# ============================================================================
+# SERVICES - Define all application components
+# ============================================================================
+services:
+  
+  # --------------------------------------------------------------------------
+  # FRONTEND SERVICE - Nginx serving static files
+  # Demonstrates: Basic service definition, port mapping, networking
+  # --------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: task-frontend
+    ports:
+      - "3000:80"              # Host:Container - Access via http://localhost:3000
+    depends_on:
+      - backend                # Wait for backend to start first
+    networks:
+      - app-network            # Connect to custom network
+    restart: unless-stopped    # Auto-restart on failure
+    volumes:
+      # Bind mount for development - changes reflect immediately
+      - ./frontend/public:/usr/share/nginx/html:ro
+    environment:
+      - BACKEND_URL=http://backend:5000
+    labels:
+      - "com.example.description=Frontend web server"
+      - "com.example.service=frontend"
+
+  # --------------------------------------------------------------------------
+  # BACKEND SERVICE - Node.js REST API
+  # Demonstrates: Service dependencies, environment variables, health checks
+  # --------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: development
+    container_name: task-backend
+    ports:
+      - "5000:5000"            # API accessible at http://localhost:5000
+    depends_on:
+      database:
+        condition: service_healthy    # Wait for database health check
+      redis:
+        condition: service_started
+    networks:
+      - app-network
+    restart: unless-stopped
+    environment:
+      # Database connection
+      DATABASE_HOST: database
+      DATABASE_PORT: 5432
+      DATABASE_NAME: taskdb
+      DATABASE_USER: admin
+      DATABASE_PASSWORD: admin123
+      
+      # Redis connection
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      
+      # Application config
+      NODE_ENV: development
+      PORT: 5000
+      LOG_LEVEL: info
+    volumes:
+      # Bind mount for hot-reload during development
+      - ./backend:/app
+      - /app/node_modules      # Prevent overwriting node_modules
+      # Named volume for logs
+      - backend-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.example.description=Backend REST API"
+      - "com.example.service=backend"
+
+  # --------------------------------------------------------------------------
+  # DATABASE SERVICE - PostgreSQL
+  # Demonstrates: Named volumes for persistence, health checks, initialization
+  # --------------------------------------------------------------------------
+  database:
+    image: postgres:15-alpine     # Official PostgreSQL image
+    container_name: task-database
+    ports:
+      - "5432:5432"              # Expose for external tools (pgAdmin, DBeaver)
+    networks:
+      - app-network
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: taskdb
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      # Named volume - data persists even if container is removed
+      - postgres-data:/var/lib/postgresql/data
+      # Initialize database with schema
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d taskdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    labels:
+      - "com.example.description=PostgreSQL database"
+      - "com.example.service=database"
+
+  # --------------------------------------------------------------------------
+  # REDIS SERVICE - In-memory cache
+  # Demonstrates: Persistent storage with append-only file
+  # --------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: task-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass redis123
+    volumes:
+      # Named volume for Redis persistence
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "com.example.description=Redis cache"
+      - "com.example.service=cache"
+
+# ============================================================================
+# NETWORKS - Define custom networks for service isolation
+# ============================================================================
+networks:
+  app-network:
+    driver: bridge              # Default driver, services can communicate
+    name: task-app-network
+    labels:
+      - "com.example.description=Task application network"
+    # Optional: Define custom IP range
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+
+# ============================================================================
+# VOLUMES - Define persistent storage
+# ============================================================================
+volumes:
+  # Database data - persists across container restarts
+  postgres-data:
+    driver: local
+    labels:
+      - "com.example.description=PostgreSQL data volume"
+  
+  # Redis data - persists across container restarts
+  redis-data:
+    driver: local
+    labels:
+      - "com.example.description=Redis data volume"
+  
+  # Application logs
+  backend-logs:
+    driver: local
+    labels:
+      - "com.example.description=Backend application logs"
+
+# ============================================================================
+# USAGE INSTRUCTIONS
+# ============================================================================
+# 
+# Start all services:
+#   docker-compose up -d
+#
+# View logs:
+#   docker-compose logs -f
+#
+# Stop all services:
+#   docker-compose down
+#
+# Remove all data (fresh start):
+#   docker-compose down -v
+#
+# Rebuild after code changes:
+#   docker-compose up -d --build
+#
+# Access services:
+#   Frontend:  http://localhost:3000
+#   Backend:   http://localhost:5000
+#   Database:  localhost:5432 (user: admin, pass: admin123)
+#   Redis:     localhost:6379 (pass: redis123)
+#
+# ============================================================================

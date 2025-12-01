@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager - Docker Compose Demo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>🐳 Task Management System</h1>
+            <p class="subtitle">Docker Compose Multi-Service Application</p>
+        </header>
+
+        <!-- Service Status -->
+        <section class="status-section">
+            <h2>📡 Service Status</h2>
+            <div class="services">
+                <div class="service-card">
+                    <div class="service-icon">🌐</div>
+                    <div class="service-name">Frontend</div>
+                    <div class="service-status" id="frontend-status">Active</div>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">⚙️</div>
+                    <div class="service-name">Backend API</div>
+                    <div class="service-status" id="backend-status">Checking...</div>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">💾</div>
+                    <div class="service-name">PostgreSQL</div>
+                    <div class="service-status" id="database-status">Connected</div>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">⚡</div>
+                    <div class="service-name">Redis Cache</div>
+                    <div class="service-status" id="redis-status">Connected</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statistics -->
+        <section class="stats-section">
+            <h2>📊 Statistics</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-tasks">0</div>
+                    <div class="stat-label">Total Tasks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="completed-tasks">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="pending-tasks">0</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Add Task Form -->
+        <section class="add-task-section">
+            <h2>➕ Add New Task</h2>
+            <form id="add-task-form">
+                <div class="form-group">
+                    <input 
+                        type="text" 
+                        id="task-title" 
+                        placeholder="Task title..." 
+                        required
+                    >
+                </div>
+                <div class="form-group">
+                    <textarea 
+                        id="task-description" 
+                        placeholder="Task description (optional)..." 
+                        rows="3"
+                    ></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Task</button>
+            </form>
+        </section>
+
+        <!-- Tasks List -->
+        <section class="tasks-section">
+            <h2>📋 Tasks</h2>
+            <div id="tasks-container">
+                <div class="loading">Loading tasks...</div>
+            </div>
+        </section>
+
+        <!-- Docker Compose Info -->
+        <section class="info-section">
+            <h2>🐳 Docker Compose Configuration</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>Services</h3>
+                    <ul>
+                        <li><strong>Frontend:</strong> Nginx on port 3000</li>
+                        <li><strong>Backend:</strong> Node.js API on port 5000</li>
+                        <li><strong>Database:</strong> PostgreSQL on port 5432</li>
+                        <li><strong>Cache:</strong> Redis on port 6379</li>
+                    </ul>
+                </div>
+                <div class="info-card">
+                    <h3>Networking</h3>
+                    <ul>
+                        <li>Custom bridge network: <code>app-network</code></li>
+                        <li>Services communicate by name</li>
+                        <li>Isolated from host network</li>
+                        <li>DNS resolution enabled</li>
+                    </ul>
+                </div>
+                <div class="info-card">
+                    <h3>Storage</h3>
+                    <ul>
+                        <li><strong>postgres-data:</strong> Named volume</li>
+                        <li><strong>redis-data:</strong> Named volume</li>
+                        <li>Data persists across restarts</li>
+                        <li>Bind mounts for development</li>
+                    </ul>
+                </div>
+                <div class="info-card">
+                    <h3>Features</h3>
+                    <ul>
+                        <li>Health checks for all services</li>
+                        <li>Automatic restart on failure</li>
+                        <li>Environment variable configuration</li>
+                        <li>Redis caching for performance</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
