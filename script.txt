@@ -1,0 +1,23 @@
+minikube start
+minikube status
+
+kubectl create deployment nginx-deploy --image=nginx
+kubectl expose deployment nginx-deploy --type=NodePort --port=80
+
+kubectl get all
+kubectl get svc nginx-deploy
+
+minikube service nginx-deploy
+
+kubectl scale deployment nginx-deploy --replicas=3
+
+kubectl describe pods
+kubectl logs -l app=nginx-deploy
+kubectl describe nodes
+
+docker pull jasonrivers/nagios
+docker run --name nagios -d -p 8081:80 jasonrivers/nagios
+
+kubectl delete svc nginx-deploy
+kubectl delete deployment nginx-deploy
+docker rm -f nagios
