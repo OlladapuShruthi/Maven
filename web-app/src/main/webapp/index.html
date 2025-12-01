@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maven Web Application</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="number"],
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 12px 30px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            border-radius: 5px;
+            display: none;
+        }
+        .error {
+            background-color: #ffebee;
+            border-left-color: #f44336;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Maven Multi-Module Web Application</h1>
+        <p>This web application demonstrates Maven build system features:</p>
+        <ul>
+            <li>Multi-module project structure</li>
+            <li>Dependency management</li>
+            <li>WAR packaging for deployment</li>
+            <li>Module interdependencies (web-app uses java-app)</li>
+        </ul>
+        
+        <h2>📊 Calculator Service</h2>
+        <form id="calcForm">
+            <div class="form-group">
+                <label>First Number:</label>
+                <input type="number" id="num1" value="10" required>
+            </div>
+            <div class="form-group">
+                <label>Operation:</label>
+                <select id="operation">
+                    <option value="add">Addition (+)</option>
+                    <option value="subtract">Subtraction (-)</option>
+                    <option value="multiply">Multiplication (×)</option>
+                    <option value="divide">Division (÷)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Second Number:</label>
+                <input type="number" id="num2" value="5" required>
+            </div>
+            <button type="submit">Calculate</button>
+        </form>
+        <div id="calcResult" class="result"></div>
+        
+        <h2>📝 Data Processor</h2>
+        <form id="dataForm">
+            <div class="form-group">
+                <label>Text to Process:</label>
+                <input type="text" id="text" value="Hello Maven" required>
+            </div>
+            <button type="submit">Process Data</button>
+        </form>
+        <div id="dataResult" class="result"></div>
+    </div>
+    
+    <script>
+        // Calculator form handler
+        document.getElementById('calcForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const num1 = document.getElementById('num1').value;
+            const num2 = document.getElementById('num2').value;
+            const op = document.getElementById('operation').value;
+            
+            fetch(`calculate?num1=${num1}&num2=${num2}&op=${op}`)
+                .then(response => response.json())
+                .then(data => {
+                    const resultDiv = document.getElementById('calcResult');
+                    if (data.error) {
+                        resultDiv.className = 'result error';
+                        resultDiv.innerHTML = `<strong>Error:</strong> ${data.error}`;
+                    } else {
+                        resultDiv.className = 'result';
+                        resultDiv.innerHTML = `
+                            <strong>Result:</strong> ${data.num1} ${getSymbol(data.operation)} ${data.num2} = ${data.result}
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        `;
+                    }
+                    resultDiv.style.display = 'block';
+                })
+                .catch(error => {
+                    document.getElementById('calcResult').innerHTML = `<strong>Error:</strong> ${error}`;
+                    document.getElementById('calcResult').className = 'result error';
+                    document.getElementById('calcResult').style.display = 'block';
+                });
+        });
+        
+        // Data processor form handler
+        document.getElementById('dataForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const text = document.getElementById('text').value;
+            
+            fetch(`process?text=${encodeURIComponent(text)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const resultDiv = document.getElementById('dataResult');
+                    if (data.error) {
+                        resultDiv.className = 'result error';
+                        resultDiv.innerHTML = `<strong>Error:</strong> ${data.error}`;
+                    } else {
+                        resultDiv.className = 'result';
+                        resultDiv.innerHTML = `
+                            <strong>Processed Data:</strong>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        `;
+                    }
+                    resultDiv.style.display = 'block';
+                })
+                .catch(error => {
+                    document.getElementById('dataResult').innerHTML = `<strong>Error:</strong> ${error}`;
+                    document.getElementById('dataResult').className = 'result error';
+                    document.getElementById('dataResult').style.display = 'block';
+                });
+        });
+        
+        function getSymbol(op) {
+            const symbols = { add: '+', subtract: '-', multiply: '×', divide: '÷' };
+            return symbols[op] || op;
+        }
+    </script>
+</body>
+</html>
